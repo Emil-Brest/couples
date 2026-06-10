@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth (better-auth compatible) ───────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions      Session[]
+  accounts      Account[]
+
+  // App relations
+  memberships   GroupMember[]
+  moodStates    MoodState[]
+  currentMoodId String?
+  currentMood   MoodState?    @relation("CurrentMood", fields: [currentMoodId], references: [id])
+  touchesSent   Touch[]       @relation("TouchSender")
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("accounts")
+}
+
+model Verification {
+  id         String    @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@map("verifications")
+}
+
+// ─── Groups (multi-tenant ready, v2 expone esto) ─────────────────────────────
+
+model Group {
+  id         String    @id @default(cuid())
+  type       GroupType @default(COUPLE)
+  inviteCode String    @unique @default(cuid())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  members GroupMember[]
+  touches Touch[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  id       String          @id @default(cuid())
+  userId   String
+  groupId  String
+  role     GroupMemberRole @default(MEMBER)
+  joinedAt DateTime        @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+  @@map("group_members")
+}
+
+enum GroupType {
+  COUPLE
+  FRIENDS
+  FAMILY
+}
+
+enum GroupMemberRole {
+  ADMIN
+  MEMBER
+}
+
+// ─── Mood / Tazas ────────────────────────────────────────────────────────────
+
+model MoodState {
+  id        String   @id @default(cuid())
+  userId    String
+  label     String
+  emoji     String
+  isDefault Boolean  @default(false)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentUsers User[] @relation("CurrentMood")
+
+  @@map("mood_states")
+}
+
+// ─── Touches ─────────────────────────────────────────────────────────────────
+
+model Touch {
+  id        String   @id @default(cuid())
+  senderId  String
+  groupId   String
+  createdAt DateTime @default(now())
+
+  sender User  @relation("TouchSender", fields: [senderId], references: [id], onDelete: Cascade)
+  group  Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@map("touches")
+}

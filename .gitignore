@@ -1,0 +1,40 @@
+# dependencies
+node_modules
+.pnpm-store
+
+# turbo
+.turbo
+
+# build outputs
+.next
+dist
+build
+out
+
+# env files — NEVER subir al repo
+.env
+.env.local
+.env.*.local
+
+# misc
+.DS_Store
+*.pem
+Thumbs.db
+*.tsbuildinfo
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# prisma generated
+prisma/generated
+
+# IDE
+.vscode
+.idea
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
