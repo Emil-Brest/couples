@@ -49,9 +49,17 @@ export default async function HomePage() {
         </h1>
 
         {partner ? (
-          <p className="text-sm text-gray-500">
-            Conectado/a con <strong>{partner.user.name}</strong>
-          </p>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-500">
+              Conectado/a con <strong>{partner.user.name}</strong>
+            </p>
+            <Link
+              href="/tazas"
+              className="inline-block bg-black text-white rounded-md px-4 py-2 text-sm font-medium"
+            >
+              Ver tazas
+            </Link>
+          </div>
         ) : (
           <div className="space-y-2">
             <p className="text-sm text-gray-500">

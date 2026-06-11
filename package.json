@@ -4,6 +4,8 @@
   "private": true,
   "packageManager": "pnpm@11.5.2",
   "scripts": {
+    "start": "powershell -ExecutionPolicy Bypass -File start.ps1",
+    "start:reset": "powershell -ExecutionPolicy Bypass -File start.ps1 -Reset",
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",

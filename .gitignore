@@ -34,6 +34,9 @@ prisma/generated
 .vscode
 .idea
 
+# Scripts sensibles no van al repo (contienen env vars)
+# start.ps1 SI va — no tiene secrets hardcodeados
+
 # OS
 Thumbs.db
 ehthumbs.db
