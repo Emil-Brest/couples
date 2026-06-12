@@ -20,17 +20,39 @@ type TazasData = {
   partner: Partner | null;
 };
 
-export default function TazasClient({ initial }: { initial: TazasData }) {
+type TouchStats = {
+  total: number;
+  mine: number;
+  partner: number;
+};
+
+type TouchData = {
+  today: TouchStats | null;
+  month: TouchStats | null;
+};
+
+export default function TazasClient({
+  initial,
+  initialTouches,
+}: {
+  initial: TazasData;
+  initialTouches: TouchData;
+}) {
   const [data, setData] = useState<TazasData>(initial);
+  const [touches, setTouches] = useState<TouchData>(initialTouches);
   const [selecting, setSelecting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [touching, setTouching] = useState(false);
 
   const refresh = useCallback(async () => {
-    const res = await fetch("/api/moods");
-    if (res.ok) setData(await res.json());
+    const [moodsRes, touchesRes] = await Promise.all([
+      fetch("/api/moods"),
+      fetch("/api/touches/stats"),
+    ]);
+    if (moodsRes.ok) setData(await moodsRes.json());
+    if (touchesRes.ok) setTouches(await touchesRes.json());
   }, []);
 
-  // Polling cada 30s para actualizar la taza de la pareja
   useEffect(() => {
     const interval = setInterval(refresh, 30_000);
     return () => clearInterval(interval);
@@ -48,6 +70,26 @@ export default function TazasClient({ initial }: { initial: TazasData }) {
     });
     await refresh();
     setSaving(false);
+  }
+
+  async function sendTouch() {
+    if (touching) return;
+    setTouching(true);
+
+    // Optimistic update
+    setTouches((prev) => ({
+      ...prev,
+      today: prev.today
+        ? { ...prev.today, total: prev.today.total + 1, mine: prev.today.mine + 1 }
+        : { total: 1, mine: 1, partner: 0 },
+      month: prev.month
+        ? { ...prev.month, total: prev.month.total + 1, mine: prev.month.mine + 1 }
+        : { total: 1, mine: 1, partner: 0 },
+    }));
+
+    await fetch("/api/touches", { method: "POST" });
+
+    setTimeout(() => setTouching(false), 600);
   }
 
   return (
@@ -76,7 +118,7 @@ export default function TazasClient({ initial }: { initial: TazasData }) {
       </div>
 
       {/* Tu taza */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-3 py-12">
+      <div className="flex-1 flex flex-col items-center justify-center gap-3 py-8">
         <p className="text-xs uppercase tracking-widest text-gray-400">Vos</p>
         <button
           onClick={() => setSelecting(true)}
@@ -101,28 +143,55 @@ export default function TazasClient({ initial }: { initial: TazasData }) {
             </>
           )}
         </button>
-
         {currentMood && (
-          <button
-            onClick={() => setMood(null)}
-            className="text-xs text-gray-400 underline mt-1"
-          >
+          <button onClick={() => setMood(null)} className="text-xs text-gray-400 underline">
             Limpiar estado
           </button>
         )}
       </div>
 
+      {/* Toques */}
+      <div className="border-t border-gray-100 px-6 py-5 flex items-center justify-between">
+        <div className="space-y-0.5">
+          <p className="text-xs text-gray-400 uppercase tracking-widest">Toques hoy</p>
+          {touches.today ? (
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-semibold">{touches.today.total}</span>
+              <span className="text-xs text-gray-400">
+                vos {touches.today.mine} · pareja {touches.today.partner}
+              </span>
+            </div>
+          ) : (
+            <span className="text-2xl font-semibold">0</span>
+          )}
+          {touches.month && (
+            <p className="text-xs text-gray-400">{touches.month.total} este mes</p>
+          )}
+        </div>
+
+        <button
+          onClick={sendTouch}
+          disabled={touching}
+          className={`w-16 h-16 rounded-full bg-black text-white flex items-center justify-center text-2xl transition-transform active:scale-90 ${
+            touching ? "scale-110" : ""
+          }`}
+        >
+          💕
+        </button>
+      </div>
+
       {/* Selector de mood */}
       {selecting && (
-        <div className="fixed inset-0 bg-black/40 flex items-end z-50" onClick={() => setSelecting(false)}>
+        <div
+          className="fixed inset-0 bg-black/40 flex items-end z-50"
+          onClick={() => setSelecting(false)}
+        >
           <div
             className="w-full bg-white rounded-t-2xl p-6 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto" />
-            <p className="text-sm font-medium text-center text-gray-500">
-              ¿Cómo estás?
-            </p>
+            <p className="text-sm font-medium text-center text-gray-500">¿Cómo estás?</p>
             <div className="grid grid-cols-2 gap-3">
               {data.moods.map((mood) => (
                 <button

@@ -22,11 +22,14 @@ model User {
   accounts      Account[]
 
   // App relations
-  memberships   GroupMember[]
-  moodStates    MoodState[]
-  currentMoodId String?
-  currentMood   MoodState?    @relation("CurrentMood", fields: [currentMoodId], references: [id])
-  touchesSent   Touch[]       @relation("TouchSender")
+  memberships      GroupMember[]
+  moodStates       MoodState[]
+  currentMoodId    String?
+  currentMood      MoodState?      @relation("CurrentMood", fields: [currentMoodId], references: [id])
+  touchesSent      Touch[]         @relation("TouchSender")
+  watchlistItems   WatchlistItem[] @relation("AddedBy")
+  watchVotes       WatchVote[]
+  watchReviews     WatchReview[]
 
   @@map("users")
 }
@@ -84,8 +87,9 @@ model Group {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  members GroupMember[]
-  touches Touch[]
+  members        GroupMember[]
+  touches        Touch[]
+  watchlistItems WatchlistItem[]
 
   @@map("groups")
 }
@@ -130,6 +134,78 @@ model MoodState {
   currentUsers User[] @relation("CurrentMood")
 
   @@map("mood_states")
+}
+
+// ─── Watchlist ───────────────────────────────────────────────────────────────
+
+model WatchlistItem {
+  id          String      @id @default(cuid())
+  title       String
+  type        ContentType @default(MOVIE)
+  platform    String?
+  coverUrl    String?
+  trailerUrl  String?
+  description String?
+  year        Int?
+  tmdbId      Int?
+  addedById   String
+  groupId     String
+  status      WatchStatus @default(PENDING)
+  watchedAt   DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  addedByUser User        @relation("AddedBy", fields: [addedById], references: [id])
+  group       Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  votes   WatchVote[]
+  reviews WatchReview[]
+
+  @@map("watchlist_items")
+}
+
+model WatchVote {
+  id        String   @id @default(cuid())
+  itemId    String
+  userId    String
+  want      Boolean
+  createdAt DateTime @default(now())
+
+  item WatchlistItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, userId])
+  @@map("watch_votes")
+}
+
+model WatchReview {
+  id        String   @id @default(cuid())
+  itemId    String
+  userId    String
+  rating    Int      // 1–10 → se muestra como ½ estrellas (0.5–5)
+  text      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  item WatchlistItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, userId])
+  @@map("watch_reviews")
+}
+
+enum ContentType {
+  MOVIE
+  SERIES
+  DOCUMENTARY
+  ANIME
+  SHORT
+}
+
+enum WatchStatus {
+  PENDING  // en lista, esperando votos
+  BUCKET   // ambos dijeron sí → va a la ruleta
+  WATCHED  // ya la vieron
+  SKIPPED  // la saltaron
 }
 
 // ─── Touches ─────────────────────────────────────────────────────────────────
