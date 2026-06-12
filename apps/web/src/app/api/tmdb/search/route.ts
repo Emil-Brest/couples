@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   if (!q || q.length < 2) return NextResponse.json({ results: [] });
 
   const url = `${TMDB_BASE}/search/multi?api_key=${apiKey}&query=${encodeURIComponent(q)}&language=es-AR&include_adult=false&page=1`;
-  const res = await fetch(url, { next: { revalidate: 60 } });
+  const res = await fetch(url);
 
   if (!res.ok) return NextResponse.json({ error: "Error TMDB" }, { status: 502 });
 

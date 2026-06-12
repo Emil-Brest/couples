@@ -30,20 +30,9 @@ export default function SignUpPage() {
     }
 
     if (inviteCode) {
-      const res = await fetch("/api/groups/join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inviteCode }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error ?? "Error al unirse al grupo");
-        setLoading(false);
-        return;
-      }
-
-      router.push("/");
+      // Redirigimos al join page server-side para que la sesión ya esté lista
+      router.push(`/join/${inviteCode}`);
+      return;
     } else {
       const res = await fetch("/api/groups", { method: "POST" });
 

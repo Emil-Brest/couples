@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
   const endpoint = mediaType === "tv" ? "tv" : "movie";
   const url = `${TMDB_BASE}/${endpoint}/${tmdbId}/videos?api_key=${apiKey}&language=es-AR`;
-  const res = await fetch(url, { next: { revalidate: 86400 } });
+  const res = await fetch(url, {});
 
   if (!res.ok) return NextResponse.json({ trailerUrl: null });
 
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
   if (!pick) {
     // Fallback: fetch English videos
     const urlEn = `${TMDB_BASE}/${endpoint}/${tmdbId}/videos?api_key=${apiKey}&language=en-US`;
-    const resEn = await fetch(urlEn, { next: { revalidate: 86400 } });
+    const resEn = await fetch(urlEn, {});
     if (resEn.ok) {
       const dataEn = await resEn.json();
       const videosEn: TmdbVideo[] = dataEn.results ?? [];

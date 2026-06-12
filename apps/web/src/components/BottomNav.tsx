@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Inicio", icon: HomeIcon },
+  { href: "/", label: "Perfil", icon: ProfileIcon },
   { href: "/tazas", label: "Tazas", icon: TazaIcon },
   { href: "/watchlist", label: "Ver", icon: WatchIcon },
   { href: "/comidas", label: "Comidas", icon: FoodIcon },
@@ -15,7 +15,7 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex safe-bottom z-40">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-gray-100 dark:border-gray-800 flex safe-bottom z-40">
       {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
         const active = pathname === href || (href !== "/" && pathname.startsWith(href));
         return (
@@ -23,7 +23,9 @@ export default function BottomNav() {
             key={href}
             href={href}
             className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors ${
-              active ? "text-black" : "text-gray-400"
+              active
+                ? "text-black dark:text-white"
+                : "text-gray-400 dark:text-gray-600"
             }`}
           >
             <Icon active={active} />
@@ -35,11 +37,11 @@ export default function BottomNav() {
   );
 }
 
-function HomeIcon({ active }: { active: boolean }) {
+function ProfileIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
-      <path d="M9 21V12h6v9" />
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
     </svg>
   );
 }
